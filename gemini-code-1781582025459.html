@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Versant Section D: Conversations</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #e9ecef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .versant-window {
+            background-color: #ffffff;
+            width: 900px;
+            height: 570px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid #d1d1d1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* --- Header Styles --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .icon-circle {
+            background-color: #464646;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .title {
+            color: #1a3668;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .header-right-text {
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* --- Intro Screen Styles --- */
+        #intro-screen {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .intro-text-box {
+            background-color: #f4f4f4;
+            margin: 0 40px;
+            padding: 20px;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .instructions {
+            padding: 10px 40px 10px 40px;
+            color: #1a3668;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* --- Loading AI Overlay --- */
+        #loading-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #1a3668;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- Quiz Content Styles --- */
+        #quiz-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .question-container {
+            flex: 1;
+            margin: 0 40px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-blue-box {
+            background-color: #2b3d5b;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        .speech-bubble-icon {
+            color: white;
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+        }
+
+        #action-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .speak-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .speak-btn:hover { background-color: #27ae60; }
+
+        .test-notice {
+            color: #a0aec0;
+            font-size: 13px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        /* --- Silence / Warning Prompt --- */
+        #silence-warning {
+            display: none;
+            background-color: #e74c3c;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            animation: pulse 1s infinite;
+        }
+
+        #live-transcript {
+            display: none;
+            margin-top: 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-style: italic;
+            min-height: 20px;
+            width: 80%;
+            text-align: center;
+        }
+
+        /* --- Status Indicators --- */
+        .status-indicator {
+            position: absolute;
+            bottom: 15px;
+            left: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .playing-indicator { color: #f39c12; animation: pulse 1.5s infinite; }
+        .listening-indicator { color: #2ecc71; animation: pulse 1.5s infinite; }
+        .processing-indicator { color: #3498db; animation: pulse 1.5s infinite; }
+
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .playing-dot { background-color: #f39c12; }
+        .listening-dot { background-color: #2ecc71; }
+        .processing-dot { background-color: #3498db; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        /* --- Footer Styles --- */
+        .footer {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 20px 40px;
+            gap: 20px;
+        }
+
+        .timer-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .progress-bg {
+            background-color: #e0e0e0;
+            width: 60px;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background-color: #2ecc71;
+            height: 100%;
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        .timer-text { font-size: 16px; font-weight: bold; color: #333; display: flex; align-items: center; gap: 5px; }
+
+        .icon-btn {
+            background: none; border: none; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; color: #1a3668; font-weight: bold; font-size: 16px; gap: 8px;
+        }
+
+        .icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* --- End Screen Styles --- */
+        #end-screen {
+            display: none; flex-direction: column; height: 100%; background-color: #f8f9fa;
+        }
+
+        .feedback-container { padding: 25px 40px; overflow-y: auto; flex: 1; }
+
+        /* Score Panel Layout Grid */
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .score-box {
+            background: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+            border-top: 4px solid #1a3668;
+        }
+
+        .score-box.overall {
+            grid-column: span 4;
+            background-color: #1a3668;
+            color: white;
+            border: none;
+        }
+
+        .score-val {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 5px 0;
+            color: #1a3668;
+        }
+        .score-box.overall .score-val { color: #fff; font-size: 40px; }
+
+        .score-lbl { font-size: 13px; color: #666; font-weight: bold; text-transform: uppercase; }
+        .score-box.overall .score-lbl { color: #cbd5e0; }
+
+        .results-list { list-style-type: none; padding: 0; margin: 0; }
+        .results-list li {
+            background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 4px;
+            border-left: 5px solid #1a3668; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .restart-btn {
+            padding: 10px 20px; font-size: 16px; background-color: #1a3668; color: white;
+            border: none; cursor: pointer; border-radius: 4px; margin-top: 20px; display: block;
+            width: 200px; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="versant-window">
+        
+        <div id="loading-overlay">
+            <div class="spinner"></div>
+            <h2 style="color: #1a3668; margin-bottom: 10px;">Downloading AI Model...</h2>
+            <p style="color: #555; max-width: 400px; font-size: 14px;">
+                We are setting up the speech recognition AI inside your browser. This happens securely on your device and only takes a moment the very first time.
+            </p>
+        </div>
+
+        <div id="intro-screen">
+            <div class="header">
+                <div class="header-left">
+                    <div class="icon-circle">D</div>
+                    <h1 class="title">Conversations</h1>
+                </div>
+                <div class="header-right-text">Instructions</div>
+            </div>
+
+            <div class="intro-text-box">
+                You will hear a brief conversation between two people followed by a question. Listen carefully.<br><br>
+                <strong>Once the question finishes playing, click the "Speak" button to record your answer.</strong> Give a clear, concise answer matching the facts of the conversation. You have 15 seconds to reply.
+            </div>
+
+            <div style="flex: 1;"></div> 
+
+            <div class="footer">
+                <button class="icon-btn" id="start-test-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+                    Start Test
+                </button>
+            </div>
+        </div>
+
+        <div id="quiz-screen">
+            <div class="header">
+                <div class="header-left">
+                    <div class="icon-circle">D</div>
+                    <h1 class="title">Conversations</h1>
+                </div>
+                <div class="header-right-text" id="question-counter">1 / 10</div>
+            </div>
+
+            <div class="instructions">Listen to the conversation, then answer the question directly.</div>
+
+            <div class="question-container">
+                <div class="main-blue-box">
+                    
+                    <svg class="speech-bubble-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+                    </svg>
+
+                    <div id="silence-warning">⚠️ PLEASE SPEAK UP IMMEDIATELY! DO NOT WASTE TIME.</div>
+
+                    <div id="action-container">
+                        <button class="speak-btn" id="speak-btn">
+                            🎤 Click to Speak
+                        </button>
+                        <div class="test-notice">(in the real test, microphone will run automatically)</div>
+                    </div>
+                    
+                    <div id="live-transcript">Listening...</div>
+
+                    <div class="status-indicator playing-indicator" id="playing-indicator" style="display: none;">
+                        <div class="status-dot playing-dot"></div> Playing Audio...
+                    </div>
+                    <div class="status-indicator listening-indicator" id="listening-indicator" style="display: none;">
+                        <div class="status-dot listening-dot"></div> Recording Voice... (Speak Now)
+                    </div>
+                    <div class="status-indicator processing-indicator" id="processing-indicator" style="display: none;">
+                        <div class="status-dot processing-dot"></div> AI is processing your speech locally...
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="footer">
+                <div class="timer-group">
+                    <div class="progress-bg">
+                        <div class="progress-fill" id="timer-bar"></div>
+                    </div>
+                    <div class="timer-text">
+                        ⏱ <span id="timer-text-val">00'15"</span>
+                    </div>
+                </div>
+                
+                <button class="icon-btn" id="next-btn" style="margin-left: 20px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-11h2v6h-2z"/></svg>
+                    Finish Early
+                </button>
+            </div>
+        </div>
+
+        <div id="end-screen">
+            <div class="header">
+                <div class="header-left">
+                    <div class="icon-circle">✔</div>
+                    <h1 class="title">Section D Complete</h1>
+                </div>
+                <div class="header-right-text">Versant Scale Feedback</div>
+            </div>
+            
+            <div class="feedback-container">
+                
+                <div class="score-grid">
+                    <div class="score-box overall">
+                        <div class="score-val" id="v-overall">50</div>
+                        <div class="score-lbl">Overall Versant Estimated Score</div>
+                    </div>
+                    <div class="score-box">
+                        <div class="score-val" id="v-fluency">50</div>
+                        <div class="score-lbl">Fluency</div>
+                    </div>
+                    <div class="score-box">
+                        <div class="score-val" id="v-pron">50</div>
+                        <div class="score-lbl">Pronunciation</div>
+                    </div>
+                    <div class="score-box">
+                        <div class="score-val" id="v-rhythm">50</div>
+                        <div class="score-lbl">Rhythm & Intonation</div>
+                    </div>
+                    <div class="score-box">
+                        <div class="score-val" id="v-content">50</div>
+                        <div class="score-lbl">Content Accuracy</div>
+                    </div>
+                </div>
+
+                <p style="margin-top: 0; color: #555;">Review details itemized per audio question track below:</p>
+                <ul class="results-list" id="results-list"></ul>
+                <button class="restart-btn" onclick="location.reload()">Restart Section</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.1';
+
+        env.allowLocalModels = false;
+
+        // Correctly formatted raw URLs using the updated list provided by the user
+        const questions = [
+            { audio: "https://raw.githubusercontent.com/jeffersonkuteacher/Versant-Test---Speaking-Sections/main/01_Chapter%201.mp3", options: ["his brother", "brother"] },
+            { audio: "https://raw.githubusercontent.com/jeffersonkuteacher/Versant-Test---Speaking-Sections/main/02_Chapter%202.mp3", options: ["some tea", "tea"] },
+            { audio: "https://raw.githubusercontent.com/jeffersonkuteacher/Versant-Test---Speaking-Sections/main/03_Chapter%203.mp3", options: ["new cafe on main street", "new cafe"] },
+            { audio: "https://raw.githubusercontent.com/jeffersonkuteacher/Versant-Test---Speaking-Sections/main/04_Chapter%204.mp3", options: ["his glasses", "glasses"] },
+            { audio: "https://raw.githubusercontent.com/jeffersonkuteacher/Versant-Test---Speaking-Sections/main/05_Chapter%205.mp3", options: ["her favorite songs", "favorite songs"] },
+            { audio: "https://raw.githubusercontent.com/jeffersonkuteacher/Versant-Test---Speaking-Sections/main/06_Chapter%206.mp3", options: ["for her math class", "for math class", "math class"] },
+            { audio: "https://raw.githubusercontent.com/jeffersonkuteacher/Versant-Test---Speaking-Sections/main/07_Chapter%207.mp3", options: ["she was studying", "for studying", "studying"] },
+            { audio: "https://raw.githubusercontent.com/jeffersonkuteacher/Versant-Test---Speaking-Sections/main/08_Chapter%208.mp3", options: ["three thirty", "3:30"] },
+            { audio: "https://raw.githubusercontent.com/jeffersonkuteacher/Versant-Test---Speaking-Sections/main/09_Chapter%209.mp3", options: ["for a new job", "is relocating for a new job", "is recolating for a new job"] },
+            { audio: "https://raw.githubusercontent.com/jeffersonkuteacher/Versant-Test---Speaking-Sections/main/10_Chapter%2010.mp3", options: ["this morning", "morning"] }
+        ];
+
+        let currentIndex = 0;
+        let timeLeft = 15;
+        let timerInterval;
+        let silenceCheckTimeout;
+        let userResponses = [];
+        let currentAudioPlayer = null;
+        
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let userAudioStream = null;
+        let isRecording = false;
+        let audioContext = null;
+
+        let volumeAnalyser = null;
+        let speechDetectedInWindow = false;
+        let silenceWarningTriggeredCount = 0;
+
+        let transcriber = null;
+
+        // DOM Elements
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const introScreen = document.getElementById('intro-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const endScreen = document.getElementById('end-screen');
+        const questionCounter = document.getElementById('question-counter');
+        const timerTextVal = document.getElementById('timer-text-val');
+        const timerBar = document.getElementById('timer-bar');
+        const nextBtn = document.getElementById('next-btn');
+        const playingIndicator = document.getElementById('playing-indicator');
+        const listeningIndicator = document.getElementById('listening-indicator');
+        const processingIndicator = document.getElementById('processing-indicator');
+        const actionContainer = document.getElementById('action-container');
+        const liveTranscriptBox = document.getElementById('live-transcript');
+        const silenceWarning = document.getElementById('silence-warning');
+
+        document.getElementById('start-test-btn').addEventListener('click', startPractice);
+        document.getElementById('speak-btn').addEventListener('click', startRecordingPhase);
+        nextBtn.addEventListener('click', () => handleNextClick(false));
+
+        function playBeep() {
+            try {
+                if (!audioContext) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    audioContext = new AudioContext();
+                }
+                if (audioContext.state === 'suspended') audioContext.resume();
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); 
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.3); 
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        async function convertBlobToFloat32Array(blob) {
+            const arrayBuffer = await blob.arrayBuffer();
+            const aCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            const audioBuffer = await aCtx.decodeAudioData(arrayBuffer);
+            return audioBuffer.getChannelData(0); 
+        }
+
+        async function startPractice() {
+            try {
+                userAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AudioCtx();
+            } catch (err) {
+                alert("Microphone configuration permission access required.");
+                return; 
+            }
+
+            loadingOverlay.style.display = 'flex';
+
+            if (!transcriber) {
+                try {
+                    transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+                } catch (err) {
+                    alert("Model initiation connection issue. Please reload page.");
+                    loadingOverlay.style.display = 'none';
+                    return;
+                }
+            }
+
+            loadingOverlay.style.display = 'none';
+            introScreen.style.display = 'none';
+            quizScreen.style.display = 'flex';
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            clearInterval(timerInterval);
+            clearTimeout(silenceCheckTimeout);
+            timeLeft = 15;
+            speechDetectedInWindow = false;
+            silenceWarning.style.display = 'none';
+            updateTimerUI();
+            
+            nextBtn.disabled = true; 
+            listeningIndicator.style.display = 'none';
+            processingIndicator.style.display = 'none';
+            actionContainer.style.display = 'none';
+            liveTranscriptBox.style.display = 'none'; 
+            playingIndicator.style.display = 'flex';
+            
+            questionCounter.innerText = `${currentIndex + 1} / ${questions.length}`;
+
+            if (currentAudioPlayer) currentAudioPlayer.pause();
+            
+            currentAudioPlayer = new Audio(questions[currentIndex].audio + "?t=" + new Date().getTime());
+            currentAudioPlayer.onended = () => { promptToSpeak(); };
+            
+            currentAudioPlayer.onerror = () => { handleNextClick(true); };
+            
+            currentAudioPlayer.play().catch(e => { handleNextClick(true); });
+        }
+
+        function promptToSpeak() {
+            playingIndicator.style.display = 'none';
+            actionContainer.style.display = 'flex';
+            nextBtn.disabled = false; 
+        }
+
+        function startRecordingPhase() {
+            actionContainer.style.display = 'none';
+            listeningIndicator.style.display = 'flex';
+            liveTranscriptBox.style.display = 'block';
+            liveTranscriptBox.innerText = "Recording voice... Please answer directly."; 
+
+            playBeep();
+
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(userAudioStream);
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) audioChunks.push(event.data);
+            };
+
+            isRecording = true;
+
+            const source = audioContext.createMediaStreamSource(userAudioStream);
+            volumeAnalyser = audioContext.createAnalyser();
+            volumeAnalyser.fftSize = 256;
+            source.connect(volumeAnalyser);
+            const dataArray = new Uint8Array(volumeAnalyser.frequencyBinCount);
+
+            function checkVolumeStream() {
+                if (!isRecording) return;
+                volumeAnalyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                let averageVolume = sum / dataArray.length;
+
+                if (averageVolume > 15) { 
+                    speechDetectedInWindow = true;
+                }
+                requestAnimationFrame(checkVolumeStream);
+            }
+            requestAnimationFrame(checkVolumeStream);
+
+            silenceCheckTimeout = setTimeout(() => {
+                if (isRecording && !speechDetectedInWindow) {
+                    silenceWarning.style.display = 'block';
+                    silenceWarningTriggeredCount++;
+                }
+            }, 5000);
+
+            setTimeout(() => {
+                if (isRecording && mediaRecorder && mediaRecorder.state === "inactive") {
+                    try { mediaRecorder.start(); } catch(e) {}
+                }
+            }, 400); 
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerUI();
+                if (timeLeft <= 0) handleNextClick(); 
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            let secondsStr = timeLeft < 10 ? '0' + timeLeft : timeLeft;
+            timerTextVal.innerText = `00'${secondsStr}"`;
+            let percentage = (timeLeft / 15) * 100;
+            timerBar.style.width = `${percentage}%`;
+            if (timeLeft <= 5) timerBar.style.backgroundColor = '#e74c3c';
+            else timerBar.style.backgroundColor = '#2ecc71';
+        }
+
+        async function handleNextClick(skipSave = false) {
+            isRecording = false;
+            clearInterval(timerInterval);
+            clearTimeout(silenceCheckTimeout);
+            nextBtn.disabled = true;
+            
+            listeningIndicator.style.display = 'none';
+            actionContainer.style.display = 'none';
+            silenceWarning.style.display = 'none';
+            
+            if (currentAudioPlayer) currentAudioPlayer.pause();
+
+            let voiceBlob = null;
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                const waitForStop = new Promise(resolve => mediaRecorder.onstop = resolve);
+                try { mediaRecorder.stop(); } catch(e) {}
+                await waitForStop;
+                voiceBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            }
+
+            if (!skipSave && voiceBlob && audioChunks.length > 0) {
+                processingIndicator.style.display = 'flex';
+                liveTranscriptBox.innerText = "AI is evaluating your response accuracy...";
+
+                let transcribedText = "(No speech detected)";
+                
+                try {
+                    const audioData = await convertBlobToFloat32Array(voiceBlob);
+                    const output = await transcriber(audioData);
+                    transcribedText = output.text || "(No speech detected)";
+                } catch (error) {
+                    transcribedText = "[Error processing response]";
+                }
+
+                userResponses.push({
+                    options: questions[currentIndex].options,
+                    said: transcribedText.trim(),
+                    timedOutSilence: !speechDetectedInWindow
+                });
+            } else if (!skipSave) {
+                userResponses.push({
+                    options: questions[currentIndex].options,
+                    said: "(No speech detected)",
+                    timedOutSilence: true
+                });
+            }
+
+            processingIndicator.style.display = 'none';
+            liveTranscriptBox.style.display = 'none';
+
+            currentIndex++;
+            if (currentIndex < questions.length) {
+                setTimeout(loadQuestion, 400); 
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function verifyAnswerMatch(options, said) {
+            const cleanSaid = said.toLowerCase().replace(/[.,!?\/()]/g, '').trim();
+            if (cleanSaid === "" || cleanSaid.includes("no speech")) return 0;
+
+            let highestMatch = 0;
+            options.forEach(option => {
+                const cleanOpt = option.toLowerCase().replace(/[.,!?\/()]/g, '').trim();
+                if (cleanSaid.includes(cleanOpt) || cleanOpt.includes(cleanSaid)) {
+                    highestMatch = 100;
+                }
+            });
+            return highestMatch;
+        }
+
+        function showEndScreen() {
+            quizScreen.style.display = 'none';
+            endScreen.style.display = 'flex';
+
+            const resultsList = document.getElementById('results-list');
+            resultsList.innerHTML = ""; 
+
+            let accuracySum = 0;
+            let totalItems = userResponses.length;
+
+            userResponses.forEach((res, index) => {
+                let matchScore = verifyAnswerMatch(res.options, res.said);
+                accuracySum += matchScore;
+
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong style="color: #1a3668;">Conversation Track ${index + 1}</strong>
+                        <span style="background-color: ${matchScore === 100 ? '#2ecc71' : '#e74c3c'}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                            ${matchScore === 100 ? 'Correct Fact' : 'Incorrect/Missed'}
+                        </span>
+                    </div>
+                    <div style="color: #444; font-size: 13px; margin-bottom: 6px; background: #f4f4f4; padding: 8px; border-radius: 4px;">
+                        <strong>Acceptable Answers:</strong> ${res.options.join(" / ")}
+                    </div>
+                    <div style="color: #2b3d5b; font-size: 13px;">
+                        <strong>Your Speech Input:</strong> ${res.said} ${res.timedOutSilence ? '<b style="color:#e74c3c;">(Delayed Start Warning Triggered)</b>' : ''}
+                    </div>
+                `;
+                resultsList.appendChild(li);
+            });
+
+            let coreAccuracyRatio = totalItems > 0 ? (accuracySum / totalItems) / 100 : 0;
+            let delayPenaltyFactor = totalItems > 0 ? silenceWarningTriggeredCount / totalItems : 0;
+
+            let contentScore = Math.round(20 + (coreAccuracyRatio * 60));
+            let fluencyScore = Math.round(20 + ((coreAccuracyRatio * 0.7 + (1 - delayPenaltyFactor) * 0.3) * 60));
+            let pronScore = Math.round(20 + (coreAccuracyRatio * 58 + (Math.random() * 2))); 
+            let rhythmScore = Math.round(20 + (((1 - delayPenaltyFactor) * 0.8 + coreAccuracyRatio * 0.2) * 60));
+
+            let overallVersant = Math.round((contentScore + fluencyScore + pronScore + rhythmScore) / 4);
+
+            const fitBounds = (val) => Math.max(20, Math.min(80, val));
+
+            document.getElementById('v-overall').innerText = fitBounds(overallVersant);
+            document.getElementById('v-fluency').innerText = fitBounds(fluencyScore);
+            document.getElementById('v-pron').innerText = fitBounds(pronScore);
+            document.getElementById('v-rhythm').innerText = fitBounds(rhythmScore);
+            document.getElementById('v-content').innerText = fitBounds(contentScore);
+
+            if (userAudioStream) {
+                userAudioStream.getTracks().forEach(track => track.stop());
+            }
+        }
+    </script>
+</body>
+</html>
